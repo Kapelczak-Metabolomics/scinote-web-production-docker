@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   db:
     image: postgres:15
@@ -11,12 +13,13 @@ services:
 
   web:
     build:
-      context: .             # This must be the path to the cloned repo
-      dockerfile: Dockerfile # The one from the SciNote repo
+      context: .               # MUST be the root of the cloned SciNote repo
+      dockerfile: Dockerfile
     image: scinote_web_production
     container_name: scinote_web
     depends_on:
       - db
+    working_dir: /usr/src/app
     env_file:
       - ./production.env
     environment:
@@ -27,10 +30,14 @@ services:
       - scinote_storage:/usr/src/app/storage
 
   jobs:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: scinote_web_production
     container_name: scinote_jobs
     depends_on:
       - db
+    working_dir: /usr/src/app
     env_file:
       - ./production.env
     environment:
