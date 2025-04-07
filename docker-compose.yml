@@ -13,7 +13,7 @@ services:
 
   web:
     build:
-      context: .               # MUST be the root of the cloned SciNote repo
+      context: .
       dockerfile: Dockerfile
     image: scinote_web_production
     container_name: scinote_web
