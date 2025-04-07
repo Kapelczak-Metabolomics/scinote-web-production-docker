@@ -1,50 +1,32 @@
-FROM ruby:3.2-bookworm
-MAINTAINER SciNote <info@scinote.net>
+# Use official Ruby base image
+FROM ruby:3.1
 
-ARG TIKA_DIST_URL="https://dlcdn.apache.org/tika/2.9.3/tika-app-2.9.3.jar"
-ENV TIKA_PATH=/usr/local/bin/tika-app.jar
-
-# additional dependecies
-# libreoffice for file preview generation
-RUN apt-get update -qq && \
-  apt-get install -y --no-install-recommends \
-  libjemalloc2 \
-  libssl-dev \
+# Install OS dependencies
+RUN apt-get update -qq && apt-get install -y \
+  build-essential \
+  libpq-dev \
   nodejs \
+  yarn \
   postgresql-client \
-  default-jre-headless \
-  poppler-utils \
-  librsvg2-2 \
-  libvips42 \
-  graphviz  \
-  libreoffice \
-  fonts-droid-fallback \
-  fonts-noto-mono \
-  fonts-wqy-microhei \
-  fonts-wqy-zenhei \
-  libfile-mimeinfo-perl \
-  chromium \
-  chromium-sandbox \
-  yarnpkg && \
-  wget -O $TIKA_PATH $TIKA_DIST_URL && \
-  chmod +x $TIKA_PATH && \
-  ln -s /usr/lib/x86_64-linux-gnu/libvips.so.42 /usr/lib/x86_64-linux-gnu/libvips.so && \
-  rm -rf /var/lib/apt/lists/*
+  git
 
-ENV PATH=/usr/share/nodejs/yarn/bin:$PATH
+# Set working directory
+WORKDIR /usr/src/app
 
-RUN yarn add puppeteer@npm:puppeteer-core@^22.15.0
+# Copy and install Ruby dependencies
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
 
-ENV BUNDLE_PATH /usr/local/bundle/
+# Copy and install JS dependencies
+COPY package.json yarn.lock ./
+RUN yarn install
+RUN yarn add sass
 
-# create app directory
-ENV APP_HOME /usr/src/app
-ENV PATH $APP_HOME/bin:$PATH
-RUN mkdir $APP_HOME
-RUN adduser --uid 1000 scinote
-RUN chown scinote:scinote $APP_HOME
-USER scinote
-ENV CHROMIUM_PATH=$APP_HOME/bin/chromium
-WORKDIR $APP_HOME
+# Copy the rest of the application code
+COPY . .
 
-CMD rails s -b 0.0.0.0
+# Precompile assets (optional in production builds)
+RUN RAILS_ENV=production bundle exec rake assets:precompile
+
+# Default command (can be overridden in Compose)
+CMD ["bash"]
