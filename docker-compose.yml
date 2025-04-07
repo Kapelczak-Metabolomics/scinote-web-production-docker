@@ -1,98 +1,55 @@
-version: '2'
+version: "3.8"
 services:
   db:
-    container_name: scinote_db_development
     image: postgres:15
+    container_name: scinote_db
     volumes:
-      - scinote_development_postgres:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - scinote_postgres_data:/var/lib/postgresql/data
     environment:
-      - "POSTGRES_USER=postgres"
-      - "POSTGRES_PASSWORD=mysecretpassword"
+      POSTGRES_USER: scinote_database
+      POSTGRES_PASSWORD: "b621bd4ad3efffb9f289"
+      POSTGRES_DB: scinote_database
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: scinote_web_development
-    container_name: scinote_web_development
-    stdin_open: true
-    tty: true
-    user: scinote
+    image: scinote/scinote-web:latest
+    container_name: scinote_web
     depends_on:
       - db
-    ports:
-      - "3001:3000"
-    command: >
-      bash -c "rm -f /usr/src/app/tmp/pids/server.pid &&
-               (bundle check || bundle install) &&
-               bundle exec rails s -b 0.0.0.0"
     environment:
-      - RAILS_ENV=development
+      RAILS_ENV: production
+      DATABASE_URL: "postgresql://scinote_database:b621bd4ad3efffb9f289@db/scinote_database"
+      SECRET_KEY_BASE: "0712e05b425a89a7b3d4a3926d16569ce9b52a521efb2c991f1fc354dc3a61a0c83b064f9d1f21fbe71"
+      PAPERCLIP_HASH_SECRET: "fb41a9c318f840a6a5d34d90c7f7e2ab"
+      PAPERCLIP_STORAGE: "filesystem"
+      MAIL_FROM: "Kapelczak ELN <noreply@kapelczak.com>"
+      MAIL_REPLYTO: "Kapelczak ELN Support <support@kapelczak.com>"
+      SMTP_ADDRESS: "smtp.socketlabs.com"
+      SMTP_PORT: "587"
+      SMTP_DOMAIN: "kapelczak.com"
+      SMTP_USERNAME: "server35806"
+      SMTP_PASSWORD: "w5CJt6s7ZBi3f4R"
+      SMTP_AUTH_METHOD: "plain"
+      MAIL_SERVER_URL: "scinote.metabolomics-scinote-web.x9jlsv.easypanel.host"
     volumes:
-      - .:/usr/src/app
-      - scinote_development_bundler:/usr/local/bundle/
-      - scinote_development_files:/usr/src/app/public/system
-      - scinote_development_storage:/usr/src/app/storage
+      - scinote_files:/usr/src/app/public/system
+      - scinote_storage:/usr/src/app/storage
 
-  webpack:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: scinote_web_development
-    container_name: scinote_webpack_development
-    stdin_open: true
-    tty: true
-    user: scinote
-    command: >
-      bash -c "yarn install && yarn build --watch"
+  jobs:
+    image: scinote/scinote-web:latest
+    container_name: scinote_jobs
+    depends_on:
+      - db
     environment:
-      - NODE_ENV=development
+      RAILS_ENV: production
+      DATABASE_URL: "postgresql://scinote_database:b621bd4ad3efffb9f289@db/scinote_database"
+      SECRET_KEY_BASE: "0712e05b425a89a7b3d4a3926d16569ce9b52a521efb2c991f1fc354dc3a61a0c83b064f9d1f21fbe71"
+      PAPERCLIP_HASH_SECRET: "fb41a9c318f840a6a5d34d90c7f7e2ab"
+    command: bundle exec rake jobs:work
     volumes:
-      - .:/usr/src/app
-      - scinote_development_bundler:/usr/local/bundle/
-      - scinote_development_files:/usr/src/app/public/system
-
-  css_bundling:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: scinote_web_development
-    container_name: scinote_css_bundling_development
-    stdin_open: true
-    tty: true
-    user: scinote
-    command: >
-      bash -c "yarn build:css --watch"
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - .:/usr/src/app
-      - scinote_development_bundler:/usr/local/bundle/
-      - scinote_development_files:/usr/src/app/public/system
-
-  tailwind:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: scinote_web_development
-    container_name: scinote_tailwind_development
-    stdin_open: true
-    tty: true
-    user: scinote
-    command: >
-      bash -c "rails tailwindcss:watch"
-    environment:
-      - RAILS_ENV=development
-      - NODE_ENV=development
-    volumes:
-      - .:/usr/src/app
-      - scinote_development_bundler:/usr/local/bundle/
-      - scinote_development_files:/usr/src/app/public/system
+      - scinote_files:/usr/src/app/public/system
+      - scinote_storage:/usr/src/app/storage
 
 volumes:
-  scinote_development_postgres:
-  scinote_development_bundler:
-  scinote_development_files:
-  scinote_development_storage:
+  scinote_postgres_data:
+  scinote_files:
+  scinote_storage:
