@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: scinote_database
 
   web:
-    image: scinote/scinote-web:latest
+    image: scinote_web_development
     container_name: scinote_web
     depends_on:
       - db
