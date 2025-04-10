@@ -1,5 +1,5 @@
 # Use official Ruby base image
-FROM ruby:3.1
+FROM ruby:3.2.2
 
 # Install OS dependencies
 RUN apt-get update -qq && apt-get install -y \
